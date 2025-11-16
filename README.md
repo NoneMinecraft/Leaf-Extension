@@ -8,14 +8,11 @@ Expansion project pack designed for Leaf Client D series
 | 新增命令        | ✅          |
 | 覆写命令        | ✅          |
 | 覆写函数        | ✅          |
-| 添加事件        | ✅          |
-| Leaf-支持库        | ✅          |
-| Minecraft lib        | ✅          |
-| nashorn       | ✅          |
-| 专属Mixin API        | ✅        |
-| 调用函数        | ✅        |
-| 添加人造的event        | ✅        |
+| Mixin API        | ✅        |
+| 内调用函数        | ✅        |
+| 覆写主菜单        | ✅        |
+| 添加事件        | ❌          |
 | 覆写事件        | ❌          |
 | 添加Value        | ❌          |
 | 覆写Value        | ❌          |
-| Mixin        | ⚠️        |
+| Mixin        | ❌        |

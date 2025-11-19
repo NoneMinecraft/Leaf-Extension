@@ -11,8 +11,8 @@ Expansion project pack designed for Leaf Client D series
 | Mixin API        | ✅        |
 | 内调用函数        | ✅        |
 | 覆写主菜单        | ✅        |
-| 添加事件        | ❌          |
-| 覆写事件        | ❌          |
+| 添加事件        | ✅          |
+| 覆写事件        | ✅ [风险极大]          |
 | 添加Value        | ❌          |
 | 覆写Value        | ❌          |
 | Mixin        | ❌        |

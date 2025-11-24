@@ -11,5 +11,4 @@ Extension project pack designed for Leaf Client D series
 | 覆写事件        | ✅         |
 | 覆写主菜单        | ✅        |
 | Mixin        | ✅        |
-| 添加Value        | ❌          |
-| 覆写Value        | ❌          |
+| 添加Value        | ✅          |

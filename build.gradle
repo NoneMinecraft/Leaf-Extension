@@ -1,25 +1,18 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id "java"
     id "idea"
     id "org.jetbrains.kotlin.jvm" version "1.8.22"
     id "net.minecraftforge.gradle.forge" version "5.1.+"
     id "org.spongepowered.mixin" version "0.7.11-SNAPSHOT"
+    id "com.github.johnrengelman.shadow" version "5.2.0"
 }
 
-dependencies {
-    compileOnly files('libs/Leaf-Library.jar')
-    compileOnly("org.spongepowered:mixin:0.7.11-SNAPSHOT") { transitive = false }
-    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    compileOnly "org.jetbrains.kotlin:kotlin-reflect:2.0.0"
-    compileOnly "com.jagrosh:DiscordIPC:0.4"
-    implementation fileTree(dir: "libs", include: ["*.jar"])
-}
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-    maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
-}
+def mixinRefmap = "mixin.extension.refmap.json"
+archivesBaseName = "Leaf-Extension"
+group = "com.example"
+version = "1.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -31,4 +24,109 @@ minecraft {
     mappings = "stable_22"
 }
 
-archivesBaseName = "Leaf-Expand"
+configurations {
+    shadowable
+    annotationProcessor
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
+}
+
+dependencies {
+    compileOnly("org.spongepowered:mixin:0.7.11-SNAPSHOT") { transitive = false }
+    annotationProcessor("org.spongepowered:mixin:0.7.11-SNAPSHOT")
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    compileOnly "org.jetbrains.kotlin:kotlin-reflect:1.9.0"
+    shadowable "org.ow2.asm:asm:5.2"
+    shadowable "org.ow2.asm:asm-commons:5.2"
+    compileOnly fileTree(dir: "libs", include: ["*.jar"])
+}
+
+tasks.withType(ShadowJar).configureEach { jar ->
+    archiveBaseName.set("${archivesBaseName}-all")
+    archiveClassifier.set("")
+    mergeServiceFiles()
+    configurations = [project.configurations.shadowable]
+    dependsOn processResources
+}
+
+build.dependsOn(shadowJar)
+
+task createRefmap {
+    group = "mixin"
+    description = "Find generated mixin refmap and copy/rename it to ${mixinRefmap}"
+
+    dependsOn classes
+
+    outputs.file("${buildDir}/resources/main/${mixinRefmap}")
+
+    doLast {
+
+        def buildCandidates = fileTree(dir: buildDir, include: '**/*refmap*.json').files as List
+
+        def excludePaths = [ 'src/main/resources', 'src/main/java', 'src/main/kotlin', 'resources' ]
+        def projectCandidates = fileTree(dir: projectDir, include: '**/*refmap*.json').files.findAll { f ->
+
+            def path = f.path.replace('\\','/')
+            return !excludePaths.any { path.contains("/${it}/") || path.endsWith("/${it}") }
+        } as List
+
+        def candidates = (buildCandidates + projectCandidates).unique()
+
+        candidates = candidates.findAll { it.name != mixinRefmap }
+
+        File chosen = null
+        if (!candidates.isEmpty()) {
+            chosen = candidates.max { it.lastModified() }
+        }
+
+        def outDir = file("${buildDir}/resources/main")
+        if (!outDir.exists()) outDir.mkdirs()
+        def outFile = file("${outDir}/${mixinRefmap}")
+
+        if (chosen) {
+            copy {
+                from chosen
+                into outDir
+                rename { String fileName -> mixinRefmap }
+            }
+        } else {
+            outFile.text = "{}"
+        }
+    }
+}
+
+tasks.named("jar").configure {
+    dependsOn(createRefmap)
+}
+tasks.withType(ShadowJar).configureEach { sh ->
+    sh.dependsOn(createRefmap)
+}
+
+tasks.named("assemble").configure {
+    dependsOn(createRefmap)
+}
+
+build.dependsOn(createRefmap)
+
+tasks.withType(JavaCompile).configureEach { compileTask ->
+    compileTask.options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+configurations.maybeCreate("kapt")
+
+dependencies {
+    kapt "org.spongepowered:mixin:0.7.11-SNAPSHOT"
+}
+
+jar {
+    from(sourceSets.main.output)
+    dependsOn(processResources)
+}
+
+tasks.named("assemble").configure {
+    dependsOn(processResources)
+}

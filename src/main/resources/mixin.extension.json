@@ -1,0 +1,11 @@
+{
+    "required": true,
+    "minVersion": "0.7.11",
+    "refmap": "mixin.extension.refmap.json",
+    "package": "dev.me.extension.mixin",
+    "compatibilityLevel": "JAVA_8",
+    "mixins": [
+        "client.MixinMinecraft"
+    ],
+    "client": []
+}
